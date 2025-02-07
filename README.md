@@ -21,7 +21,7 @@ Check out the WooCommerce API endpoints and data that can be manipulated in <htt
 ## Setup
 
 ```js
-const WooCommerceRestApi = require('@beardon/woocommerce-rest-api').default;
+const { WooCommerceRestApi } = require('@beardon/woocommerce-rest-api');
 
 const api = new WooCommerceRestApi({
   url: 'http://example.com',
@@ -103,7 +103,7 @@ const api = new WooCommerceRestApi({
 ## Example of use
 
 ```js
-const WooCommerceRestApi = require("@woocommerce/woocommerce-rest-api").default;
+const { WooCommerceRestApi } = require('@woocommerce/woocommerce-rest-api');
 
 const api = new WooCommerceRestApi({
   url: 'http://example.com',
@@ -121,8 +121,8 @@ api.get('products', {
     console.log('Response Status:', response.status);
     console.log('Response Headers:', response.headers);
     console.log('Response Data:', response.data);
-    console.log('Total of pages:', response.headers['x-wp-totalpages']);
-    console.log('Total of items:', response.headers['x-wp-total']);
+    console.log('Total of pages:', response.headers[ 'x-wp-totalpages' ]);
+    console.log('Total of items:', response.headers[ 'x-wp-total' ]);
   })
   .catch((error) => {
     // Invalid request, for 4xx and 5xx statuses

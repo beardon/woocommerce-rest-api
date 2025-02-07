@@ -6,7 +6,7 @@ const Url = require('url-parse');
 /**
  * Options Exception.
  */
-export class OptionsException {
+class OptionsException {
     /**
      * Constructor.
      *
@@ -23,7 +23,7 @@ export class OptionsException {
  *
  * @param {Object} opt
  */
-export default class WooCommerceRestApi {
+class WooCommerceRestApi {
     /**
      * Class constructor.
      *
@@ -276,3 +276,8 @@ export default class WooCommerceRestApi {
     }
 
 }
+
+module.exports = {
+    OptionsException,
+    WooCommerceRestApi,
+};
