@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/beardon/woocommerce-rest-api-js/issues"
   },
-  "main": "index",
+  "main": "index.js",
   "files": [
     "index.js"
   ],
