@@ -9,7 +9,6 @@ const Url = require('url-parse');
 class OptionsException {
     /**
      * Constructor.
-     *
      * @param {String} message
      */
     constructor(message) {
@@ -20,14 +19,12 @@ class OptionsException {
 
 /**
  * WooCommerce REST API wrapper
- *
  * @param {Object} opt
  */
 class WooCommerceRestApi {
     /**
      * Class constructor.
-     *
-     * @param {Object} options
+     * @param {Object} [options]
      */
     constructor(options) {
         if (!(this instanceof WooCommerceRestApi)) return new WooCommerceRestApi(options);
@@ -35,38 +32,32 @@ class WooCommerceRestApi {
         if (!options.url) throw new OptionsException('url is required');
         if (!options.consumerKey) throw new OptionsException('consumerKey is required');
         if (!options.consumerSecret) throw new OptionsException('consumerSecret is required');
-        this.classVersion = '1.0.2';
-        this.#setDefaultsOptions(options);
+        this.classVersion = '1.0.4';
+        this.#setDefaultOptions(options);
     }
 
     /**
      * DELETE requests
-     *
      * @param  {String} endpoint
-     * @param  {Object} params
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [params]
+     * @returns {Promise<Object>}
      */
-    delete(endpoint, params = { }) {
+    delete(endpoint, params) {
         return this.#request('delete', endpoint, null, params);
     }
 
     /**
      * GET requests
-     *
      * @param  {String} endpoint
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [params]
+     * @return {Promise<Object>}
      */
-    get(endpoint, params = { }) {
+    get(endpoint, params) {
         return this.#request('get', endpoint, null, params);
     }
 
     /**
      * Get OAuth
-     *
      * @return {Object}
      */
     #getOAuth() {
@@ -85,10 +76,8 @@ class WooCommerceRestApi {
 
     /**
      * Get URL
-     *
      * @param  {String} endpoint
-     * @param  {Object} params
-     *
+     * @param  {Object} [params]
      * @return {String}
      */
     #getUrl(endpoint, params) {
@@ -107,13 +96,12 @@ class WooCommerceRestApi {
 
     /**
      * Normalize query string for oAuth
-     *
      * @param  {String} url
-     * @param  {Object} params
-     *
+     * @param  {Object} [params]
      * @return {String}
      */
     #normalizeQueryString(url, params) {
+        params = params || { };
         // Exit if don't find query string.
         if ((url.indexOf('?') === -1) && (Object.keys(params).length === 0)) {
             return url;
@@ -121,7 +109,6 @@ class WooCommerceRestApi {
         const query = new Url(url, null, true).query;
         const values = [ ];
         let queryString = '';
-
         // Include params object into URL.searchParams.
         this.#parseParamsObject(params, query);
         for (const key in query) {
@@ -141,19 +128,16 @@ class WooCommerceRestApi {
 
     /**
      * OPTIONS requests
-     *
      * @param  {String} endpoint
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [params]
+     * @return {Promise<Object>}
      */
-    options(endpoint, params = { }) {
+    options(endpoint, params) {
         return this.#request('options', endpoint, null, params);
     }
 
     /**
      * Parse params object.
-     *
      * @param {Object} params
      * @param {Object} query
      */
@@ -174,41 +158,35 @@ class WooCommerceRestApi {
 
     /**
      * POST requests
-     *
      * @param  {String} endpoint
-     * @param  {Object} data
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [data]
+     * @param  {Object} [params]
+     * @return {Promise<Object>}
      */
-    post(endpoint, data, params = { }) {
+    post(endpoint, data, params) {
         return this.#request('post', endpoint, data, params);
     }
 
     /**
      * PUT requests
-     *
      * @param  {String} endpoint
-     * @param  {Object} data
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [data]
+     * @param  {Object} [params]
+     * @return {Promise<Object>}
      */
-    put(endpoint, data, params = { }) {
+    put(endpoint, data, params) {
         return this.#request('put', endpoint, data, params);
     }
 
     /**
      * Do requests
-     *
      * @param  {String} method
      * @param  {String} endpoint
-     * @param  {Object} data
-     * @param  {Object} params
-     *
-     * @return {Object}
+     * @param  {Object} [data]
+     * @param  {Object} [params]
+     * @return {Promise<Object>}
      */
-    #request(method, endpoint, data, params = { }) {
+    #request(method, endpoint, data, params) {
         const url = this.#getUrl(endpoint, params);
         let options = {
             url: url,
@@ -218,29 +196,29 @@ class WooCommerceRestApi {
             responseType: 'json',
             headers: {
                 'User-Agent': 'WooCommerce REST API - JS Client/' + this.classVersion,
-                Accept: 'application/json'
-            }
+                Accept: 'application/json',
+            },
         };
         if (this.isHttps) {
             if (this.queryStringAuth) {
                 options.params = {
                     consumer_key: this.consumerKey,
-                    consumer_secret: this.consumerSecret
+                    consumer_secret: this.consumerSecret,
                 };
             } else {
                 options.auth = {
                     username: this.consumerKey,
-                    password: this.consumerSecret
+                    password: this.consumerSecret,
                 };
             }
             options.params = {
                 ...options.params,
-                ...params
+                ...params,
             };
         } else {
             options.params = this.#getOAuth().authorize({
                 url: url,
-                method: method
+                method: method,
             });
         }
         if (data) {
@@ -249,32 +227,57 @@ class WooCommerceRestApi {
         }
 
         // Allow set and override Axios options.
-        options = {
+        const config = {
+            ...this.axiosConfig,
             ...options,
-            ...this.axiosConfig
         };
-        return axios(options);
+        const instance = axios.create();
+        this.#setupInterceptors(instance);
+        return instance(config);
     }
 
     /**
      * Set default options
-     *
-     * @param {Object} opt
+     * @param {Object} [options]
      */
-    #setDefaultsOptions(opt) {
-        this.url = opt.url;
-        this.wpAPIPrefix = opt.wpAPIPrefix || 'wp-json';
-        this.version = opt.version || 'wc/v3';
+    #setDefaultOptions(options) {
+        options = options || { };
+        this.url = options.url;
+        this.wpAPIPrefix = options.wpAPIPrefix || 'wp-json';
+        this.version = options.version || 'wc/v3';
         this.isHttps = /^https/i.test(this.url);
-        this.consumerKey = opt.consumerKey;
-        this.consumerSecret = opt.consumerSecret;
-        this.encoding = opt.encoding || 'utf8';
-        this.queryStringAuth = opt.queryStringAuth || false;
-        this.port = opt.port || '';
-        this.timeout = opt.timeout;
-        this.axiosConfig = opt.axiosConfig || { };
+        this.consumerKey = options.consumerKey;
+        this.consumerSecret = options.consumerSecret;
+        this.encoding = options.encoding || 'utf8';
+        this.queryStringAuth = options.queryStringAuth || false;
+        this.port = options.port || '';
+        this.timeout = options.timeout;
+        this.axiosConfig = options.axiosConfig || { };
     }
 
+    #setupInterceptors(instance) {
+        instance.interceptors.request.use(
+            (config) => {
+                const newConfig = { ...config };
+                newConfig.metadata = { startTime: new Date() };
+                return newConfig;
+            },
+        );
+        instance.interceptors.response.use(
+            (response) => {
+                const newResponse = { ...response };
+                newResponse.config.metadata.endTime = new Date();
+                newResponse.duration = newResponse.config.metadata.endTime - newResponse.config.metadata.startTime;
+                return newResponse;
+            },
+            (error) => {
+                const newError = { ...error };
+                newError.config.metadata.endTime = new Date();
+                newError.duration = newError.config.metadata.endTime - newError.config.metadata.startTime;
+                return Promise.reject(newError);
+            },
+        );
+    }
 }
 
 module.exports = {
